@@ -1,6 +1,6 @@
 use iced::widget::text;
 use iced::{Element, Sandbox, Settings};
-mod backend;
+
 fn main() -> iced::Result {
     Editor::run(Settings::default())
 }
