@@ -1,5 +1,7 @@
+mod cursor;
+
 use std::io;
-mod backend;
+
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     DefaultTerminal, Frame,
@@ -72,7 +74,9 @@ impl Widget for &App {
             .title_bottom(instructions.centered())
             .border_set(border::THICK);
 
-        let counter_text = Text::from(vec![Line::from(vec![self.text.clone().into()])]);
+        let counter_text = Text::from(vec![Line::from(vec![
+            format!("{}\x1b[31m|\x1b[0m", self.text).into(),
+        ])]);
 
         Paragraph::new(counter_text)
             .left_aligned()
