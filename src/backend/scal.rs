@@ -1,4 +1,4 @@
-use std::{fs::{self, File}, io::{Error, ErrorKind, Write}, pat};
+use std::{fmt::format, fs::{self, File}, io::{Error, ErrorKind, Write}, pat};
 
 use crate::backend::utils::is_valid_name;
 
@@ -22,25 +22,61 @@ impl Scal {
             groups: Vec::new(),
         })
     }
-    /**레포를 실제 파일 시스템에다가 삽입 path 뒤에 / 붙어있어야함 main은 브랜치 이름 */
-    fn build_scal(&self, path: String, main:String) -> std::io::Result<()> {
+    /// 레포 파일시스템에 초기화 함수 무조건 실행이 필요
+    /// * `path` - 어디다 쓸지. /home/asdf/Desktop/ 까지. 레포 이름까진 안넣어도 됨. 경로 뒤에 /무조건 필요
+    /// * `defaultbranch` - 기본 브렌치 이름 이상한거 넣으면 에러남
+    fn build_scal(&self, path: String, defaultbranch:String) -> std::io::Result<()> {
         let mut infopath:String = path.to_owned();
         infopath.push_str("INFO");
 
         let mut defaultbranchpath:String = path.to_owned();
-        infopath.push_str("DEFAULT_BRANCH");
+        defaultbranchpath.push_str("DEFAULT_BRANCH");
+        
+        let mut branchfolderpath:String = path.to_owned();
+        branchfolderpath.push_str(&format!("branchs/"));
+
+        let mut branchfilepath:String = path.to_owned();
+        branchfilepath.push_str(&format!("branchs/{}", defaultbranch));
+
+        let mut groupsfolderpath:String = path.to_owned();
+        groupsfolderpath.push_str(&format!("groups/"));
+
+        let mut ownergroupfilepath:String = path.to_owned();
+        ownergroupfilepath.push_str(&format!("groups/owner"));
+
+        let mut lastissuenumpath:String = path.to_owned();
+        lastissuenumpath.push_str(&format!("LASTISSUENUM"));
+
+        let mut issuesfolderpath:String = path.to_owned();
+        issuesfolderpath.push_str(&format!("issues/"));
 
         //폴더 만들기
         fs::create_dir_all(&path)?;
+        fs::create_dir_all(&branchfolderpath)?;
+        fs::create_dir_all(&groupsfolderpath)?;
+        fs::create_dir_all(&issuesfolderpath)?;
 
         //INFO 쓰기
         let mut infofile = File::create(infopath)?;
-        infofile.write_all(format!("name:{}\ndiscription:{}", self.name, self.discription).as_bytes())?;
+        infofile.write_all(format!("name:{}\ndiscription:{}\nowner:{}", self.name, self.discription, self.owner).as_bytes())?;
 
         //DEFAULT_BRANCH
         let mut defaultbranchfile = File::create(defaultbranchpath)?;
-        let branchname = is_valid_name(main.clone())?;
+        let branchname = is_valid_name(self.name.clone())?;
         defaultbranchfile.write_all(format!("{}", branchname).as_bytes())?;
+
+        //branchs/{defaultbranch}
+        let mut branchfile = File::create(branchfilepath)?;
+        branchfile.write_all(format!("commit:none").as_bytes())?;
+
+        //groups/owner
+        let mut ownergroupfile = File::create(ownergroupfilepath)?;
+        ownergroupfile.write_all(b"prepass")?;
+
+        //LAST ISSUE NUM
+        let mut lastissuenumfile = File::create(lastissuenumpath)?;
+        lastissuenumfile.write_all(b"none");
+
         Ok(())
     }
 }
