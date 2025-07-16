@@ -7,9 +7,9 @@ use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
     layout::Rect,
-    style::Stylize,
+    style::{Color, Style, Stylize},
     symbols::border,
-    text::{Line, Text},
+    text::{Line, Span, Text},
     widgets::{Block, Paragraph, Widget},
 };
 
@@ -52,6 +52,7 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char(c) => self.text.push(c),
+            KeyCode::Enter => self.text.push('\n'),
             KeyCode::Esc => self.exit(),
             KeyCode::Backspace => {
                 let _ = self.text.pop();
@@ -67,20 +68,25 @@ impl App {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(" Rascal ".bold());
-        let instructions = Line::from(vec![" Quit ".into(), "<Esc> ".blue().bold()]);
-        let block = Block::bordered()
-            .title(title.centered())
-            .title_bottom(instructions.centered())
-            .border_set(border::THICK);
+        let mut lines = vec![Line::from("Rascal".bold())];
 
-        let counter_text = Text::from(vec![Line::from(vec![
-            format!("{}\x1b[31m|\x1b[0m", self.text).into(),
-        ])]);
+        let txt = format!("{}\x1b[31m|\x1b[0m", self.text);
+        let text_lines: Vec<Line> = txt
+            .lines()
+            .enumerate()
+            .map(|(idx, line)| {
+                let line_number = format!("{:>5} ", idx + 1);
+                Line::from(vec![
+                    Span::styled(line_number, Style::default().fg(Color::DarkGray)),
+                    Span::raw(line.to_string()),
+                ])
+            })
+            .collect();
 
-        Paragraph::new(counter_text)
+        lines.extend(text_lines);
+
+        Paragraph::new(Text::from(lines))
             .left_aligned()
-            .block(block)
             .render(area, buf);
     }
 }
