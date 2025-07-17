@@ -8,9 +8,8 @@ use ratatui::{
     buffer::Buffer,
     layout::Rect,
     style::{Color, Style, Stylize},
-    symbols::border,
     text::{Line, Span, Text},
-    widgets::{Block, Paragraph, Widget},
+    widgets::{Paragraph, Widget},
 };
 
 fn main() -> io::Result<()> {
@@ -83,7 +82,12 @@ impl Widget for &App {
             })
             .collect();
 
-        lines.extend(text_lines);
+        let height = area.height as usize;
+        if text_lines.len() + 2 >= height {
+            lines.extend(text_lines[text_lines.len() + 2 - height..].to_vec());
+        } else {
+            lines.extend(text_lines);
+        }
 
         Paragraph::new(Text::from(lines))
             .left_aligned()
