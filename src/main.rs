@@ -1,5 +1,6 @@
 mod cursor;
 
+use cursor::*;
 use std::io;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
@@ -22,6 +23,7 @@ fn main() -> io::Result<()> {
 #[derive(Debug, Default)]
 pub struct App {
     exit: bool,
+    cursor: Cursor,
     text: String,
 }
 
@@ -51,11 +53,19 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char(c) => self.text.push(c),
-            KeyCode::Enter => self.text.push('\n'),
+            KeyCode::Enter => {
+                self.text.push('\n');
+                self.cursor.next_line();
+            }
             KeyCode::Esc => self.exit(),
             KeyCode::Backspace => {
-                let _ = self.text.pop();
+                let x = self.text.pop();
+                if x == Some('\n') {
+                    self.cursor.prev_line();
+                }
             }
+            KeyCode::Up => self.cursor.prev_line(),
+            KeyCode::Down => self.cursor.next_line(),
             _ => {}
         }
     }
@@ -69,22 +79,31 @@ impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let mut lines = vec![Line::from("Rascal".bold())];
 
-        let txt = format!("{}\x1b[31m|\x1b[0m", self.text);
-        let text_lines: Vec<Line> = txt
+        let text_lines: Vec<Line> = self
+            .text
             .lines()
             .enumerate()
             .map(|(idx, line)| {
                 let line_number = format!("{:>5} ", idx + 1);
+
                 Line::from(vec![
                     Span::styled(line_number, Style::default().fg(Color::DarkGray)),
-                    Span::raw(line.to_string()),
+                    Span::raw(if idx == self.cursor.row {
+                        format!(
+                            "{}\x1b[31m|\x1b[0m{}",
+                            line[..self.cursor.column].to_string(),
+                            line[self.cursor.column..].to_string()
+                        )
+                    } else {
+                        line.to_string()
+                    }),
                 ])
             })
             .collect();
 
         let height = area.height as usize;
-        if text_lines.len() + 2 >= height {
-            lines.extend(text_lines[text_lines.len() + 2 - height..].to_vec());
+        if self.cursor.row + 3 >= height {
+            lines.extend(text_lines[self.cursor.row + 3 - height..].to_vec());
         } else {
             lines.extend(text_lines);
         }
