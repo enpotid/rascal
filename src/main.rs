@@ -1,5 +1,4 @@
 mod cursor;
-
 use cursor::*;
 use std::io;
 
@@ -12,8 +11,8 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{Paragraph, Widget},
 };
-
-fn main() -> io::Result<()> {
+#[tokio::main] //<3
+async fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
     let app_result = App::default().run(&mut terminal);
     ratatui::restore();

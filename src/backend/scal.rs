@@ -5,7 +5,7 @@ use crate::backend::utils::is_valid_name;
 use super::group::Group;
 
 //scal.rs : 문서들이 들어있을 폴더
-struct Scal {
+pub struct Scal {
     name: String,
     owner: usize, //owner's id
     discription: String,
