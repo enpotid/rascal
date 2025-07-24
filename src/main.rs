@@ -1,4 +1,5 @@
 mod cursor;
+
 use cursor::*;
 use std::io;
 
@@ -11,7 +12,8 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{Paragraph, Widget},
 };
-#[tokio::main] //<3
+
+#[tokio::main]
 async fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
     let app_result = App::default().run(&mut terminal);
@@ -51,20 +53,58 @@ impl App {
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char(c) => self.text.push(c),
-            KeyCode::Enter => {
-                self.text.push('\n');
-                self.cursor.next_line();
-            }
             KeyCode::Esc => self.exit(),
+            KeyCode::Char(c) => {
+                let mut text_lines: Vec<Vec<char>> =
+                    self.text.split("\n").map(|s| s.chars().collect()).collect();
+                text_lines[self.cursor.row].insert(self.cursor.column, c);
+                self.text = text_lines
+                    .iter()
+                    .map(|s| s.iter().collect::<String>())
+                    .collect::<Vec<String>>()
+                    .join("\n")
+                    .to_string();
+
+                self.cursor.new_char();
+            }
+            KeyCode::Enter => {
+                let mut text_lines: Vec<Vec<char>> =
+                    self.text.split("\n").map(|s| s.chars().collect()).collect();
+                text_lines[self.cursor.row].insert(self.cursor.column, '\n');
+                self.text = text_lines
+                    .iter()
+                    .map(|s| s.iter().collect::<String>())
+                    .collect::<Vec<String>>()
+                    .join("\n")
+                    .to_string();
+
+                self.cursor.new_line();
+            }
             KeyCode::Backspace => {
-                let x = self.text.pop();
-                if x == Some('\n') {
-                    self.cursor.prev_line();
+                let mut text_lines: Vec<Vec<char>> =
+                    self.text.split("\n").map(|s| s.chars().collect()).collect();
+                if self.cursor.column == 0 {
+                    if self.cursor.row != 0 {
+                        let r = text_lines.remove(self.cursor.row);
+                        text_lines[self.cursor.row - 1].extend(r);
+                        self.cursor.del_line();
+                    }
+                } else {
+                    text_lines[self.cursor.row].remove(self.cursor.column - 1);
+                    self.cursor.del_char();
                 }
+
+                self.text = text_lines
+                    .iter()
+                    .map(|s| s.iter().collect::<String>())
+                    .collect::<Vec<String>>()
+                    .join("\n")
+                    .to_string();
             }
             KeyCode::Up => self.cursor.prev_line(),
             KeyCode::Down => self.cursor.next_line(),
+            KeyCode::Left => self.cursor.prev_char(),
+            KeyCode::Right => self.cursor.next_char(),
             _ => {}
         }
     }
@@ -78,9 +118,9 @@ impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let mut lines = vec![Line::from("Rascal".bold())];
 
-        let text_lines: Vec<Line> = self
+        let mut text_lines: Vec<Line> = self
             .text
-            .lines()
+            .split("\n")
             .enumerate()
             .map(|(idx, line)| {
                 let line_number = format!("{:>5} ", idx + 1);
@@ -99,6 +139,13 @@ impl Widget for &App {
                 ])
             })
             .collect();
+
+        if text_lines.is_empty() {
+            text_lines.push(Line::from(vec![
+                Span::styled(format!("{:>5} ", 1), Style::default().fg(Color::DarkGray)),
+                Span::raw(format!("\x1b[31m|\x1b[0m")),
+            ]));
+        }
 
         let height = area.height as usize;
         if self.cursor.row + 3 >= height {
