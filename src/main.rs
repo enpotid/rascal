@@ -135,18 +135,19 @@ impl Widget for &App {
             .map(|(idx, line)| {
                 let line_number = format!("{:>5} ", idx + 1);
 
-                Line::from(vec![
-                    Span::styled(line_number, Style::default().fg(Color::DarkGray)),
-                    Span::raw(if idx == self.cursor.row {
-                        format!(
-                            "{}\x1b[31m|\x1b[0m{}",
-                            line[..self.cursor.column].to_string(),
-                            line[self.cursor.column..].to_string()
-                        )
-                    } else {
-                        line.to_string()
-                    }),
-                ])
+                if idx == self.cursor.row {
+                    Line::from(vec![
+                        Span::styled(line_number, Style::default().fg(Color::DarkGray)),
+                        Span::raw(line[..self.cursor.column].to_string()),
+                        Span::styled("|", Style::default().fg(Color::Red)),
+                        Span::raw(line[self.cursor.column..].to_string()),
+                    ])
+                } else {
+                    Line::from(vec![
+                        Span::styled(line_number, Style::default().fg(Color::DarkGray)),
+                        Span::raw(line),
+                    ])
+                }
             })
             .collect();
 
