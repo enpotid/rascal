@@ -31,11 +31,23 @@ impl Cursor {
     }
 
     pub fn prev_char(&mut self) {
-        self.column = self.column.max(1) - 1;
+        if self.column == 0 {
+            if self.row != 0 {
+                self.row -= 1;
+                self.column = self.line_lengths[self.row];
+            }
+        } else {
+            self.column -= 1;
+        }
     }
 
     pub fn next_char(&mut self) {
-        self.column = self.line_lengths[self.row].min(self.column + 1);
+        if self.column >= self.line_lengths[self.row] {
+            self.row = (self.row + 1).min(self.line_lengths.len() - 1);
+            self.column = 0;
+        } else {
+            self.column += 1;
+        }
     }
 
     pub fn prev_line(&mut self) {
