@@ -43,8 +43,10 @@ impl Cursor {
 
     pub fn next_char(&mut self) {
         if self.column >= self.line_lengths[self.row] {
-            self.row = (self.row + 1).min(self.line_lengths.len() - 1);
-            self.column = 0;
+            if self.row != self.line_lengths.len() - 1 {
+                self.row += 1;
+                self.column = 0;
+            }
         } else {
             self.column += 1;
         }
