@@ -3,7 +3,7 @@ mod cursor;
 use cursor::*;
 use std::{env, fs, io};
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
@@ -62,60 +62,67 @@ impl App {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
-        match key_event.code {
-            KeyCode::Esc => self.exit(),
-            KeyCode::Char(c) => {
-                let mut text_lines: Vec<Vec<char>> =
-                    self.text.split("\n").map(|s| s.chars().collect()).collect();
-                text_lines[self.cursor.row].insert(self.cursor.column, c);
-                self.text = text_lines
-                    .iter()
-                    .map(|s| s.iter().collect::<String>())
-                    .collect::<Vec<String>>()
-                    .join("\n")
-                    .to_string();
-
-                self.cursor.new_char();
+        if key_event.modifiers.contains(KeyModifiers::CONTROL) {
+            match key_event.code {
+                KeyCode::Char('s') => {}
+                _ => {}
             }
-            KeyCode::Enter => {
-                let mut text_lines: Vec<Vec<char>> =
-                    self.text.split("\n").map(|s| s.chars().collect()).collect();
-                text_lines[self.cursor.row].insert(self.cursor.column, '\n');
-                self.text = text_lines
-                    .iter()
-                    .map(|s| s.iter().collect::<String>())
-                    .collect::<Vec<String>>()
-                    .join("\n")
-                    .to_string();
+        } else {
+            match key_event.code {
+                KeyCode::Esc => self.exit(),
+                KeyCode::Char(c) => {
+                    let mut text_lines: Vec<Vec<char>> =
+                        self.text.split("\n").map(|s| s.chars().collect()).collect();
+                    text_lines[self.cursor.row].insert(self.cursor.column, c);
+                    self.text = text_lines
+                        .iter()
+                        .map(|s| s.iter().collect::<String>())
+                        .collect::<Vec<String>>()
+                        .join("\n")
+                        .to_string();
 
-                self.cursor.new_line();
-            }
-            KeyCode::Backspace => {
-                let mut text_lines: Vec<Vec<char>> =
-                    self.text.split("\n").map(|s| s.chars().collect()).collect();
-                if self.cursor.column == 0 {
-                    if self.cursor.row != 0 {
-                        let r = text_lines.remove(self.cursor.row);
-                        text_lines[self.cursor.row - 1].extend(r);
-                        self.cursor.del_line();
-                    }
-                } else {
-                    text_lines[self.cursor.row].remove(self.cursor.column - 1);
-                    self.cursor.del_char();
+                    self.cursor.new_char();
                 }
+                KeyCode::Enter => {
+                    let mut text_lines: Vec<Vec<char>> =
+                        self.text.split("\n").map(|s| s.chars().collect()).collect();
+                    text_lines[self.cursor.row].insert(self.cursor.column, '\n');
+                    self.text = text_lines
+                        .iter()
+                        .map(|s| s.iter().collect::<String>())
+                        .collect::<Vec<String>>()
+                        .join("\n")
+                        .to_string();
 
-                self.text = text_lines
-                    .iter()
-                    .map(|s| s.iter().collect::<String>())
-                    .collect::<Vec<String>>()
-                    .join("\n")
-                    .to_string();
+                    self.cursor.new_line();
+                }
+                KeyCode::Backspace => {
+                    let mut text_lines: Vec<Vec<char>> =
+                        self.text.split("\n").map(|s| s.chars().collect()).collect();
+                    if self.cursor.column == 0 {
+                        if self.cursor.row != 0 {
+                            let r = text_lines.remove(self.cursor.row);
+                            text_lines[self.cursor.row - 1].extend(r);
+                            self.cursor.del_line();
+                        }
+                    } else {
+                        text_lines[self.cursor.row].remove(self.cursor.column - 1);
+                        self.cursor.del_char();
+                    }
+
+                    self.text = text_lines
+                        .iter()
+                        .map(|s| s.iter().collect::<String>())
+                        .collect::<Vec<String>>()
+                        .join("\n")
+                        .to_string();
+                }
+                KeyCode::Up => self.cursor.prev_line(),
+                KeyCode::Down => self.cursor.next_line(),
+                KeyCode::Left => self.cursor.prev_char(),
+                KeyCode::Right => self.cursor.next_char(),
+                _ => {}
             }
-            KeyCode::Up => self.cursor.prev_line(),
-            KeyCode::Down => self.cursor.next_line(),
-            KeyCode::Left => self.cursor.prev_char(),
-            KeyCode::Right => self.cursor.next_char(),
-            _ => {}
         }
     }
 
