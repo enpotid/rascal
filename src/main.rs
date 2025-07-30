@@ -83,6 +83,25 @@ impl App {
 
                     self.cursor.new_char();
                 }
+                KeyCode::Tab => {
+                    let mut text_lines: Vec<Vec<char>> =
+                        self.text.split("\n").map(|s| s.chars().collect()).collect();
+                    text_lines[self.cursor.row].insert(self.cursor.column, ' ');
+                    text_lines[self.cursor.row].insert(self.cursor.column, ' ');
+                    text_lines[self.cursor.row].insert(self.cursor.column, ' ');
+                    text_lines[self.cursor.row].insert(self.cursor.column, ' ');
+                    self.text = text_lines
+                        .iter()
+                        .map(|s| s.iter().collect::<String>())
+                        .collect::<Vec<String>>()
+                        .join("\n")
+                        .to_string();
+
+                    self.cursor.new_char();
+                    self.cursor.new_char();
+                    self.cursor.new_char();
+                    self.cursor.new_char();
+                }
                 KeyCode::Enter => {
                     let mut text_lines: Vec<Vec<char>> =
                         self.text.split("\n").map(|s| s.chars().collect()).collect();
