@@ -1,2 +1,2 @@
-rascal
+# rascal
 A live file editor
