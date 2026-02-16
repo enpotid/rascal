@@ -1,2 +1,2 @@
 # rascal
-A live file editor
+A real-time file editor
